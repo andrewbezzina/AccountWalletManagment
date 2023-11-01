@@ -1,0 +1,55 @@
+CREATE TABLE Accounts (
+    Id INT IDENTITY(1,1) PRIMARY KEY NOT NULL,
+	Uuid UNIQUEIDENTIFIER NOT NULL,
+	IdCard NVARCHAR(8) NOT NULL,
+	FirstName NVARCHAR(50) NOT NULL,
+    LastName NVARCHAR(50) NOT NULL, 
+	DOB DATE NOT NULL,
+	Email NVARCHAR(255)NOT NULL,
+	Username NVARCHAR(20),
+	PasswordHash NVARCHAR(255) NOT NULL,
+    CreatedDate DATETIME NOT NULL,
+	LastUpdatedDate DATETIME  NOT NULL
+);
+
+GO
+
+CREATE INDEX Account_Uuid_Key_Index
+ON Accounts (Uuid);
+
+GO
+
+CREATE TABLE Wallets (
+    Id INT IDENTITY(1,1) PRIMARY KEY NOT NULL,
+	Uuid UNIQUEIDENTIFIER NOT NULL,
+	AccountId INT NOT NULL,
+	FOREIGN KEY (AccountId) REFERENCES Accounts(Id),
+	Balance DECIMAL NOT NULL,
+	Currency NVARCHAR(3) NOT NULL,
+    CreatedDate DATETIME NOT NULL,
+);
+
+GO
+
+CREATE INDEX Wallet_Account_Key_Index
+ON Wallets (AccountId);
+
+GO
+
+CREATE TABLE WalletTransactions (
+    Id INT IDENTITY(1,1) PRIMARY KEY NOT NULL,
+	Uuid UNIQUEIDENTIFIER NOT NULL,
+	WalletId INT NOT NULL,
+	FOREIGN KEY (WalletId) REFERENCES Wallets(Id),
+	Amount DECIMAL NOT NULL,
+	RemainingBalance DECIMAL NOT NULL,
+	TransactionReference NVARCHAR(50) NOT NULL,
+    Created DATETIME NOT NULL,
+);
+
+GO
+
+CREATE INDEX Transaction_Wallet_Key_Index
+ON WalletTransactions(WalletId);
+
+GO
