@@ -1,7 +1,10 @@
+using AcmePayLtdAPI.Validators;
 using API.Endpoints;
 using Application.DataLayer;
+using Application.DataLayer.Requests;
 using Application.Services;
 using Application.Services.PasswordHasher;
+using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 
 namespace API
@@ -29,7 +32,9 @@ namespace API
             builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
             builder.Services.AddScoped<IAccountService, AccountService>();
             builder.Services.AddScoped<IWalletService, WalletService>();
-            //builder.Services.AddScoped<>
+            builder.Services.AddScoped<ITransactionService, TransactionService>();
+            builder.Services.AddScoped<IExchangeRateService, ExchangeRateService>();
+            builder.Services.AddScoped<IValidator<CreateAccountRequest>, CreateAccountRequestValidator>();
 
             var app = builder.Build();
 

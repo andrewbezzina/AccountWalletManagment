@@ -20,18 +20,22 @@ namespace Application.Services
         private readonly DbSet<Account> _accounts;
         private readonly IPasswordHasher _passwordHasher;
         private readonly IWalletService _walletService;
+        private readonly ITransactionService _transactionService;
+        private readonly IExchangeRateService _exchangeRateService;
 
-        public AccountService(AccountDbContext context, IPasswordHasher passwordHasher, IWalletService walletService)
+        public AccountService(AccountDbContext context, IPasswordHasher passwordHasher, IWalletService walletService, ITransactionService transactionService, IExchangeRateService exchangeRateService)
         {
             _context = context;
             _accounts = context.Accounts;
             _passwordHasher = passwordHasher;
             _walletService = walletService;
+            _transactionService = transactionService;
+            _exchangeRateService = exchangeRateService;
         }
 
         public async Task<GetAccountResponse> AddGBPWalletToAccountAsync(Guid uuid)
         {
-            if (_context.Accounts == null)
+            if (_accounts == null)
             {
                 return null;
             }
@@ -42,7 +46,7 @@ namespace Application.Services
                 return null;
             }
 
-            var wallets = await _walletService.GetWalletsForAccountID(account.Id);
+            var wallets = await _walletService.GetWalletsResponseForAccountId(account.Id);
             if (wallets == null || wallets.Any(w => w.Currency == GBP_CURRENCY_CODE))
             {
                 return null;
@@ -53,9 +57,45 @@ namespace Application.Services
             return await GetAccountAsync(uuid);
         }
 
+        public async Task<GetAccountResponse> ConvertEurToGbpAsync(Guid uuid, decimal amount)
+        {
+            if (_accounts == null)
+            {
+                return null;
+            }
+
+            var account = await _accounts.FirstOrDefaultAsync(x => x.Uuid == uuid);
+            if (account == null)
+            {
+                return null;
+            }
+
+            var euroWallet = (await _walletService.GetWalletForAccountIdandCurrency(account.Id, EUR_CURRENCY_CODE));
+
+            if (euroWallet == null)
+            {
+                throw new Exception($"No Euro wallet found for account id: {uuid}");
+            }
+
+            var gbpWallet = (await _walletService.GetWalletForAccountIdandCurrency(account.Id, GBP_CURRENCY_CODE));
+
+            if (gbpWallet == null)
+            {
+                throw new Exception($"No Gbp wallet found for account id: {uuid}");
+            }
+            var rate = await _exchangeRateService.GetEurToGbpExchangeRate();
+
+            decimal convertedAmount = amount * rate;
+
+            var debittransaction = await _transactionService.AddWalletTransaction(-amount, euroWallet.Id, $"debit eur {amount} for exchange transaction");
+            var credittransaction = await _transactionService.AddWalletTransaction(convertedAmount, gbpWallet.Id, $"credit gbp {amount} for exchange transaction, debit guid {debittransaction.Uuid}");
+
+            return await GetAccountAsync(uuid);
+        }
+
         public async Task<GetAccountResponse> CreateAccountAsync(CreateAccountRequest createAccountRequest)
         {
-            if (_context.Accounts == null)
+            if (_accounts == null)
             {
                 return null; ;
             }
@@ -82,9 +122,60 @@ namespace Application.Services
             return await GetAccountAsync(addedAccount.Entity.Uuid);
         }
 
+        public async Task<GetAccountResponse> Credit10EurToAccountAsync(Guid uuid)
+        {
+            if (_accounts == null)
+            {
+                return null;
+            }
+
+            var account = await _accounts.FirstOrDefaultAsync(x => x.Uuid == uuid);
+            if (account == null)
+            {
+                return null;
+            }
+
+            var euroWallet = (await _walletService.GetWalletForAccountIdandCurrency(account.Id, EUR_CURRENCY_CODE));
+
+            if (euroWallet == null)
+            {
+                throw new Exception($"No Euro wallet found for account id: {uuid}");
+            }
+
+            var transaction = await _transactionService.AddWalletTransaction(10, euroWallet.Id, "Credit 10 Eur");
+
+            return await GetAccountAsync(uuid);
+        }
+
+        public async Task<GetAccountResponse> DebitGbpFromAccountAsync(Guid uuid, decimal amount)
+        {
+            if (_accounts == null)
+            {
+                return null;
+            }
+
+            var account = await _accounts.FirstOrDefaultAsync(x => x.Uuid == uuid);
+            if (account == null)
+            {
+                return null;
+            }
+
+            var gbpWallet = (await _walletService.GetWalletForAccountIdandCurrency(account.Id, GBP_CURRENCY_CODE));
+
+            if (gbpWallet == null)
+            {
+                throw new Exception($"No GBP wallet found for account id: {uuid}");
+            }
+
+            var transaction = await _transactionService.AddWalletTransaction(-amount, gbpWallet.Id, $"debit gbp {amount} transaction");
+
+            return await GetAccountAsync(uuid);
+        }
+    
+
         public async Task<GetAccountResponse> GetAccountAsync(Guid uuid)
         {
-            if (_context.Accounts == null)
+            if (_accounts == null)
             {
                 return null; 
             }
@@ -95,7 +186,7 @@ namespace Application.Services
                 return null;
             }
 
-            var wallets = await _walletService.GetWalletsForAccountID(account.Id);
+            var wallets = await _walletService.GetWalletsResponseForAccountId(account.Id);
 
             return  new GetAccountResponse( account.Uuid,
                                             account.IdCard,
@@ -109,7 +200,7 @@ namespace Application.Services
 
         public async Task<IReadOnlyCollection<Account>> GetAllAccountsAsync()
         {
-            if (_context.Accounts == null)
+            if (_accounts == null)
             {
                 return null;
             }
@@ -117,9 +208,29 @@ namespace Application.Services
             return await _accounts.ToListAsync();
         }
 
+        public async Task<IReadOnlyCollection<GetTransactionResponse>> GetTransactionsForAccountAndCurrencyAsync(Guid uuid, string currency)
+        {
+            if (_accounts == null)
+            {
+                return null;
+            }
+
+            var account = await _accounts.FirstOrDefaultAsync(x => x.Uuid == uuid);
+            if (account == null)
+            {
+                return null;
+            };
+
+            var wallet = await _walletService.GetWalletForAccountIdandCurrency(account.Id, currency);
+
+            var trasnactions = await _transactionService.GetTransactions(wallet.Id);
+
+            return trasnactions;
+        }
+
         public async Task<GetAccountResponse> UpdateAccountAsync(UpdateAccountRequest updateAccountRequest)
         {
-            if (_context.Accounts == null)
+            if (_accounts == null)
             {
                 return null;
             }

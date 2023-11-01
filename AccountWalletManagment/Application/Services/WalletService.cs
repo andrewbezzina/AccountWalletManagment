@@ -41,7 +41,7 @@ namespace Application.Services
             return addedWallet.Entity;
         }
 
-        public async Task<IReadOnlyCollection<GetWalletResponse>> GetWalletsForAccountID(int id)
+        public async Task<IReadOnlyCollection<GetWalletResponse>> GetWalletsResponseForAccountId(int id)
         {
             var wallets = await _wallets
                 .Where(w  => w.AccountId == id)
@@ -49,6 +49,21 @@ namespace Application.Services
                 .ToListAsync();
 
             return wallets;
+        }
+
+        public Task<List<Wallet>> GetWalletsForAccountId(int id)
+        {
+             return _wallets.Where(w => w.AccountId == id).ToListAsync();
+        }
+
+        public Task<Wallet?> GetWalletForAccountIdandCurrency(int id, string currency)
+        {
+            return _wallets.FirstOrDefaultAsync(w => w.AccountId == id && w.Currency == currency);
+        }
+
+        public Task<Wallet?> GetWalletAsync(int walletId)
+        {
+            return _wallets.FirstOrDefaultAsync(w => w.Id == walletId);
         }
     }
 }

@@ -17,7 +17,7 @@ namespace Application.DataLayer
 
         public DbSet<Account> Accounts { get; set; }
         public DbSet<Wallet> Wallets { get; set; }
-        //public DbSet<WalletTransaction> WalletTransactions { get; set; }
+        public DbSet<WalletTransaction> WalletTransactions { get; set; }
 
     }
 }

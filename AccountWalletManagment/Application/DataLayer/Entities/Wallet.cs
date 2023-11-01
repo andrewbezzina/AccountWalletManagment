@@ -10,7 +10,7 @@ namespace Application.DataLayer.Entities
         public int Id { get; set; }
         public Guid Uuid { get; set; }
         public int AccountId { get; set; }
-        public Decimal Balance { get; set; }
+        public decimal Balance { get; set; }
         public string Currency { get; set; }
         public DateTime CreatedDate { get; set; }
     }

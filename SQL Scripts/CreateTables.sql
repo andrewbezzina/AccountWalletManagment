@@ -24,7 +24,7 @@ CREATE TABLE Wallets (
 	Uuid UNIQUEIDENTIFIER NOT NULL,
 	AccountId INT NOT NULL,
 	FOREIGN KEY (AccountId) REFERENCES Accounts(Id),
-	Balance DECIMAL NOT NULL,
+	Balance DECIMAL(18,2) NOT NULL,
 	Currency NVARCHAR(3) NOT NULL,
     CreatedDate DATETIME NOT NULL,
 );
@@ -41,9 +41,9 @@ CREATE TABLE WalletTransactions (
 	Uuid UNIQUEIDENTIFIER NOT NULL,
 	WalletId INT NOT NULL,
 	FOREIGN KEY (WalletId) REFERENCES Wallets(Id),
-	Amount DECIMAL NOT NULL,
-	RemainingBalance DECIMAL NOT NULL,
-	TransactionReference NVARCHAR(50) NOT NULL,
+	Amount DECIMAL(18,2) NOT NULL,
+	RemainingBalance DECIMAL(18,2) NOT NULL,
+	TransactionReference NVARCHAR(255) NOT NULL,
     Created DATETIME NOT NULL,
 );
 
